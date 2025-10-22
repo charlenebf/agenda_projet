@@ -1,100 +1,99 @@
-# Application d'Agenda
+# Application Agenda - Guide d'Installation
 
-Une application complète d'agenda développée avec Laravel (backend) et Angular (frontend).
+## Prérequis
+
+- **PHP** >= 8.2
+- **Composer** >= 2.0
+- **Node.js** >= 18.0
+- **npm** >= 9.0
+- **MySQL** >= 8.0 ou **SQLite**
+
+## Installation Backend (Laravel)
+
+### 1. Installation des dépendances
+```bash
+cd backend
+composer install
+```
+
+### 2. Configuration de l'environnement
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+### 3. Configuration de la base de données
+Éditer le fichier `.env` :
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=angenda
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+### 4. Configuration JWT
+```bash
+php artisan jwt:secret
+```
+
+### 5. Migration de la base de données
+```bash
+php artisan migrate
+```
+
+### 6. Démarrage du serveur
+```bash
+php artisan serve
+```
+Le backend sera accessible sur `http://localhost:8000`
+
+## Installation Frontend (Angular)
+
+### 1. Installation des dépendances
+```bash
+cd frontend
+npm install
+```
+
+### 2. Configuration de l'environnement
+Vérifier le fichier `src/environments/environment.ts` :
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8000/api'
+};
+```
+
+### 3. Démarrage du serveur de développement
+```bash
+ng serve
+```
+Le frontend sera accessible sur `http://localhost:4200`
+
+## Structure du Projet
+
+```
+angenda/
+├── backend/           # API Laravel
+│   ├── app/
+│   ├── database/
+│   └── routes/
+├── frontend/          # Application Angular
+│   ├── src/
+│   └── angular.json
+└── README.md
+```
 
 ## Fonctionnalités
 
-- **Authentification sécurisée** avec JWT
-- **Gestion des événements** (CRUD complet)
-- **Vue calendrier mensuelle** interactive
-- **Interface responsive** et moderne
-- **Validation des données** côté client et serveur
-- **Gestion des erreurs** et feedback utilisateur
-
-## Architecture
-
-### Backend (Laravel)
-- **Modèles** : User, Event avec relations Eloquent
-- **Contrôleurs** : AuthController, EventController avec validation
-- **Requests** : Validation des données d'entrée
-- **Resources** : Formatage des réponses JSON
-- **Policies** : Autorisation et sécurité
-- **Middleware** : Authentification JWT
-
-### Frontend (Angular)
-- **Structure par type** : components/, services/, models/, guards/, interceptors/
-- **Services** : AuthService, EventService pour la logique métier
-- **Guards** : Protection des routes
-- **Intercepteurs** : Gestion automatique des tokens JWT
-- **Composants** : Login, Register, Calendar, EventForm
-
-## Installation
-
-### Prérequis
-- PHP 8.2+
-- Composer
-- Node.js 18+
-- MySQL/PostgreSQL
-- Redis (optionnel)
-
-### Backend Laravel
-
-```bash
-cd backend
-
-# Installation des dépendances
-composer install
-
-# Configuration de l'environnement
-cp .env.example .env
-php artisan key:generate
-php artisan jwt:secret
-
-# Configuration de la base de données dans .env
-# DB_DATABASE=agenda
-# DB_USERNAME=your_username
-# DB_PASSWORD=your_password
-
-# Migrations
-php artisan migrate
-
-# Démarrage du serveur
-php artisan serve
-```
-
-### Frontend Angular
-
-```bash
-cd frontend
-
-# Installation des dépendances
-npm install
-
-# Démarrage du serveur de développement
-ng serve
-```
-
-## Utilisation
-
-1. Accédez à `http://localhost:4200`
-2. Créez un compte ou connectez-vous
-3. Gérez vos événements dans le calendrier
-
-## Sécurité
-
-- **Authentification JWT** avec refresh token
-- **Validation des données** côté client et serveur
-- **Autorisation** par utilisateur (policies)
-- **Protection CSRF** et CORS configuré
-- **Sanitisation** des entrées utilisateur
-
-## Performance
-
-- **Lazy loading** des composants Angular
-- **Index de base de données** sur les colonnes critiques
-- **Pagination** et filtrage des événements
-- **Cache Redis** pour les sessions
-- **Optimisation des requêtes** avec Eloquent
+- ✅ **Authentification** : Inscription/Connexion avec JWT
+- ✅ **Calendrier** : Vue mensuelle interactive
+- ✅ **Événements** : CRUD complet (Créer, Lire, Modifier, Supprimer)
+- ✅ **Vue par jour** : Liste détaillée des événements
+- ✅ **Couleurs** : Personnalisation visuelle des événements
+- ✅ **Responsive** : Interface adaptée mobile/desktop
 
 ## API Endpoints
 
@@ -102,67 +101,84 @@ ng serve
 - `POST /api/auth/register` - Inscription
 - `POST /api/auth/login` - Connexion
 - `POST /api/auth/logout` - Déconnexion
-- `POST /api/auth/refresh` - Refresh token
 - `GET /api/auth/me` - Profil utilisateur
 
 ### Événements
 - `GET /api/events` - Liste des événements
+- `GET /api/events/day/{date}` - Événements d'un jour
 - `POST /api/events` - Créer un événement
-- `GET /api/events/{id}` - Détails d'un événement
 - `PUT /api/events/{id}` - Modifier un événement
 - `DELETE /api/events/{id}` - Supprimer un événement
 
-## Structure des fichiers
+## Technologies Utilisées
 
+### Backend
+- **Laravel 11** - Framework PHP
+- **JWT Auth** - Authentification
+- **MySQL/SQLite** - Base de données
+- **Repository Pattern** - Architecture
+
+### Frontend
+- **Angular 18** - Framework JavaScript
+- **TypeScript** - Langage
+- **RxJS** - Programmation réactive
+- **CSS3** - Styles modernes
+
+## Dépannage
+
+### Erreur CORS
+Ajouter dans `config/cors.php` :
+```php
+'paths' => ['api/*'],
+'allowed_origins' => ['http://localhost:4200'],
 ```
-angenda/
-├── backend/                 # API Laravel
-│   ├── app/
-│   │   ├── Http/
-│   │   │   ├── Controllers/ # Contrôleurs
-│   │   │   ├── Requests/    # Validation
-│   │   │   └── Resources/   # Formatage JSON
-│   │   ├── Models/          # Modèles Eloquent
-│   │   └── Policies/        # Autorisation
-│   ├── database/
-│   │   └── migrations/      # Migrations DB
-│   └── routes/
-│       └── api.php          # Routes API
-└── frontend/                # Application Angular
-    └── src/
-        └── app/
-            ├── components/  # Composants UI
-            ├── services/    # Services métier
-            ├── models/      # Interfaces TypeScript
-            ├── guards/      # Protection routes
-            └── interceptors/ # HTTP intercepteurs
+
+### Erreur JWT
+Régénérer la clé JWT :
+```bash
+php artisan jwt:secret --force
+```
+
+### Erreur de base de données
+Vérifier la connexion et recréer la base :
+```bash
+php artisan migrate:fresh
+```
+
+### Erreur Angular
+Nettoyer et réinstaller :
+```bash
+rm -rf node_modules package-lock.json
+npm install
 ```
 
 ## Développement
 
-### Tests
+### Backend
 ```bash
-# Backend
+# Tests
 php artisan test
 
-# Frontend
-ng test
+# Cache
+php artisan config:clear
+php artisan cache:clear
+
+# Autoload
+composer dump-autoload
 ```
 
-### Linting
+### Frontend
 ```bash
-# Backend
-./vendor/bin/pint
+# Build production
+ng build --prod
 
-# Frontend
+# Tests
+ng test
+
+# Linting
 ng lint
 ```
 
-## Déploiement
+## Architecture
 
-### Production
-1. Configurez les variables d'environnement
-2. Optimisez les assets : `ng build --prod`
-3. Configurez le serveur web (Nginx/Apache)
-4. Configurez la base de données de production
-5. Activez le cache et les optimisations Laravel
+Voir le fichier [architecture.md](architecture.md) pour une vue détaillée de l'architecture du projet.
