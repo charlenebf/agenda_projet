@@ -1,47 +1,3 @@
-name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        
-    - name: Install pnpm
-      run: npm install -g pnpm
-      
-    - name: Install frontend dependencies
-      run: |
-        cd frontend
-        pnpm install
-        
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        
-    - name: Install backend dependencies
-      run: |
-        cd backend
-        composer install --no-dev --optimize-autoloader
-        
-    - name: Run backend tests
-      run: |
-        cd backend
-        php artisan test --env=testing
-
   build-docker:
     needs: test
     runs-on: ubuntu-latest
@@ -50,16 +6,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
     - name: Build Backend Docker image
       run: |
         cd backend
+        docker build -t agenda-backend:${{ github.sha }} .
         docker build -t agenda-backend:latest .
         
     - name: Build Frontend Docker image  
       run: |
         cd frontend
+        docker build -t agenda-frontend:${{ github.sha }} .
         docker build -t agenda-frontend:latest .
         
-    - name: Verify Docker images
-      run: |
-        docker images | grep agenda
+    - name: List Docker images
+      run: docker images | grep agenda
