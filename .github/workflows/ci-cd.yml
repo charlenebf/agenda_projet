@@ -31,6 +31,7 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
+        extensions: pdo, pdo_mysql, zip
         
     - name: Install backend dependencies
       run: |
@@ -55,20 +56,18 @@ jobs:
 
     - name: Build Backend Docker image
       run: |
-        cd backend
-        docker build -t agenda-backend:${{ github.sha }} .
-        docker build -t agenda-backend:latest .
+        docker build -t agenda-backend:${{ github.sha }} ./backend
+        docker build -t agenda-backend:latest ./backend
 
     - name: Build Frontend Docker image  
       run: |
-        cd frontend
-        docker build -t agenda-frontend:${{ github.sha }} .
-        docker build -t agenda-frontend:latest .
+        docker build -t agenda-frontend:${{ github.sha }} ./frontend
+        docker build -t agenda-frontend:latest ./frontend
 
     - name: List Docker images
       run: docker images | grep agenda
 
-  deploy-preview:
+  deploy-k8s:
     needs: build-docker
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
@@ -77,31 +76,63 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Validate Kubernetes configuration
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+        
+    - name: Validate Kubernetes manifests
       run: |
-        echo "🔍 Validation de la configuration Kubernetes..."
+        echo "🔍 Validation des manifests Kubernetes..."
         
-        # Vérifier que le dossier k8s existe
-        if [ -d "k8s" ]; then
-          echo "✅ Dossier k8s présent"
-          echo "📁 Contenu du dossier k8s :"
-          ls -la k8s/
-        else
-          echo "⚠️ Dossier k8s manquant - en attente des fichiers de Jules"
-          mkdir -p k8s
-          echo "# Fichiers Kubernetes à ajouter par Jules" > k8s/README.md
-        fi
+        for file in k8s/*.yaml; do
+          if [ -f "$file" ]; then
+            echo "✅ Validation de $file"
+            kubectl --dry-run=client apply -f "$file"
+          fi
+        done
         
-    - name: Simulate deployment
+    - name: Deploy to Kubernetes (simulation)
       run: |
-        echo "🚀 SIMULATION : Déploiement Kubernetes"
-        echo "📋 Fichiers qui seraient déployés :"
-        find k8s/ -name "*.yaml" -o -name "*.yml" 2>/dev/null | while read file; do
-          echo "   ✅ $file"
-        done || echo "   ℹ️ Aucun fichier K8s trouvé - en attente"
+        echo "🚀 Déploiement Kubernetes"
+        echo "📋 Manifests disponibles :"
+        ls -la k8s/
         
-        echo ""
-        echo "🎯 QUAND JULES AURA FINI :"
-        echo "1. Ses fichiers seront dans k8s/"
-        echo "2. Le pipeline les déploiera AUTOMATIQUEMENT"
-        echo "3. Plus besoin d'intervention manuelle !"
+        echo "🔧 Configuration détectée :"
+        echo "   - Namespace: agenda"
+        echo "   - Base de données: MariaDB"
+        echo "   - Backend: Laravel (PHP 8.2-fpm)"
+        echo "   - Frontend: Angular (Node 20)"
+        echo "   - Ingress: agenda.local"
+        
+        echo "📝 Ordre de déploiement :"
+        echo "   1. kubectl apply -f k8s/namespace.yaml"
+        echo "   2. kubectl apply -f k8s/mariadb.yaml"
+        echo "   3. kubectl apply -f k8s/backend.yaml"
+        echo "   4. kubectl apply -f k8s/frontend.yaml"
+        echo "   5. kubectl wait --for=condition=ready pod -l app=mariadb -n agenda"
+        echo "   6. kubectl wait --for=condition=available deployment/backend -n agenda"
+        echo "   7. kubectl exec deployment/backend -n agenda -- php artisan migrate --force"
+        
+        echo "✅ Pipeline prêt pour déploiement automatique"
+        
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
