@@ -5,10 +5,12 @@ set -e
 echo "🚀 Déploiement de l'application Agenda sur Kubernetes"
 
 # Build images
-echo "🏗️ Construction des images Docker..."
-cd ..
-./build.sh
-cd k8s
+eval $(minikube -p minikube docker-env)  
+
+docker build -t agenda-backend:latest ./backend
+docker build -t agenda-frontend:latest ./frontend
+
+eval $(minikube docker-env -u)  
 
 # Apply Kubernetes manifests
 echo "📋 Application des manifests Kubernetes..."
