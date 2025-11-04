@@ -100,7 +100,6 @@ jobs:
           echo "Quand le cluster K8s sera prêt, ajouter :"
           echo "1. Secret KUBECONFIG sur GitHub"
           echo "2. Section de déploiement réel"
-          
         else
           echo "❌ Dossier k8s manquant"
         fi
